@@ -1,0 +1,285 @@
+import logging
+import os
+import random
+
+import numpy as np
+import torch
+import torchvision
+from sklearn.metrics import precision_recall_fscore_support
+from torch.utils.data import TensorDataset, DataLoader, RandomSampler, SequentialSampler
+from tqdm import tqdm, trange
+from transformers import BertTokenizer
+
+from models import Res_BERT
+from optimizer import BertAdam
+from resnet_utils import myResnet
+from utils import Processer
+
+
+logging.basicConfig(format='%(asctime)s - %(levelname)s - %(name)s -   %(message)s',
+                    datefmt='%m/%d/%Y %H:%M:%S',
+                    level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+output_dir = "./output"
+data_dir = "./data"
+image_dir = "./images"
+seed = 42
+num_train_epochs = 8
+train_batch_size = 32
+eval_batch_size = 16
+learning_rate = 5e-5
+warmup_proportion = 0.1
+do_train = True
+do_test = True
+
+def accuracy(out, labels):
+    outputs = np.argmax(out, axis=1)
+    return np.sum(outputs == labels)
+
+
+def macro_f1(y_true, y_pred):
+    preds = np.argmax(y_pred, axis=-1)
+    true = y_true
+    p_macro, r_macro, f_macro, support_macro \
+        = precision_recall_fscore_support(true, preds, average='macro')
+    return p_macro, r_macro, f_macro
+
+
+def main():
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    n_gpu = torch.cuda.device_count()
+    logger.info("device: {} n_gpu: {}".format(device, n_gpu))
+
+    np.random.seed(seed)
+    torch.manual_seed(seed)
+    torch.cuda.manual_seed(seed)
+    random.seed(seed)
+
+    if n_gpu > 0:
+        torch.cuda.manual_seed_all(seed)
+
+    if os.path.exists(output_dir) and os.listdir(output_dir):
+        raise ValueError("Output directory ({}) already exists and is not empty.".format(output_dir))
+
+    os.makedirs(output_dir, exist_ok=True)
+    processor = Processer(data_dir, image_dir, 77, 12)
+
+    label_list = processor.get_labels()
+    tokenizer = BertTokenizer.from_pretrained("bert-base-uncased", do_lower_case=True)
+
+    train_examples = processor.get_train_examples()
+    eval_examples = processor.get_eval_examples()
+    num_train_steps = int((len(train_examples) * num_train_epochs) / train_batch_size)
+
+    model = Res_BERT()
+
+    model.to(device)
+    net = torchvision.models.resnet152(pretrained=True)
+    encoder = myResnet(net).to(device)
+
+    if n_gpu > 1:
+        model = torch.nn.DataParallel(model)
+        encoder = torch.nn.DataParallel(encoder)
+
+    param_optimizer = list(model.named_parameters())
+    no_decay = ['bias', 'LayerNorm.bias', 'LayerNorm.weight']
+    optimizer_grouped_parameters = [
+        {'params': [p for n, p in param_optimizer if not any(nd in n for nd in no_decay)], 'weight_decay': 0.01},
+        {'params': [p for n, p in param_optimizer if any(nd in n for nd in no_decay)], 'weight_decay': 0.0},
+        {'params': encoder.parameters()}
+    ]
+    t_total = num_train_steps
+
+    optimizer = BertAdam(optimizer_grouped_parameters,
+                         lr=learning_rate,
+                         warmup=warmup_proportion,
+                         t_total=t_total)
+    output_model_file = os.path.join(output_dir, "pytorch_model.bin")
+    output_encoder_file = os.path.join(output_dir, "pytorch_encoder.bin")
+
+    train_loss = 0
+    if do_train:
+        train_features = processor.convert_mm_examples_to_features(train_examples, label_list, tokenizer)
+        eval_features = processor.convert_mm_examples_to_features(eval_examples, label_list, tokenizer)
+
+        train_input_ids, train_input_mask, train_added_input_mask, train_img_feats, \
+        train_hashtag_input_ids, train_hashtag_input_mask, train_label_ids = train_features
+        train_data = TensorDataset(train_input_ids, train_input_mask, train_added_input_mask, train_img_feats, \
+                                    train_hashtag_input_ids, train_hashtag_input_mask, train_label_ids)
+        train_dataloader = DataLoader(train_data, sampler=RandomSampler(train_data), batch_size=train_batch_size)
+
+        eval_input_ids, eval_input_mask, eval_added_input_mask, eval_img_feats, \
+        eval_hashtag_input_ids, eval_hashtag_input_mask, eval_label_ids = eval_features
+        eval_data = TensorDataset(eval_input_ids, eval_input_mask, eval_added_input_mask, eval_img_feats, \
+                                    eval_hashtag_input_ids, eval_hashtag_input_mask, eval_label_ids)
+        eval_dataloader = DataLoader(eval_data, sampler=SequentialSampler(eval_data), batch_size=eval_batch_size)
+
+        max_acc = 0.0
+        logger.info("*************** Running training ***************")
+        for train_idx in trange(int(num_train_epochs), desc="Epoch"):
+            logger.info("********** Epoch: " + str(train_idx + 1) + " **********")
+            logger.info("  Num examples = %d", len(train_examples))
+            logger.info("  Batch size = %d", train_batch_size)
+            logger.info("  Num steps = %d", num_train_steps)
+            model.train()
+            encoder.train()
+            tr_loss = 0
+            nb_tr_steps = 0
+            for step, batch in enumerate(tqdm(train_dataloader, desc="Iteration")):
+                batch = tuple(t.to(device) for t in batch)
+                train_input_ids, train_input_mask, train_added_input_mask, train_img_feats, \
+                train_hashtag_input_ids, train_hashtag_input_mask, train_label_ids = batch
+                imgs_f, img_mean, train_img_att = encoder(train_img_feats)
+
+
+                loss = model(train_input_ids, train_img_att, train_input_mask, train_added_input_mask,
+                                train_hashtag_input_ids,
+                                train_hashtag_input_mask, train_label_ids)
+                if n_gpu > 1:
+                    loss = loss.mean()
+                loss.backward()
+                tr_loss += loss.item()
+                nb_tr_steps += 1
+                optimizer.step()
+                optimizer.zero_grad()
+
+            logger.info("***** Running evaluation on Dev Set*****")
+            logger.info("  Num examples = %d", len(eval_examples))
+            logger.info("  Batch size = %d", eval_batch_size)
+            model.eval()
+            encoder.eval()
+            eval_loss, eval_accuracy = 0, 0
+            nb_eval_steps, nb_eval_examples = 0, 0
+
+            true_label_list = []
+            pred_label_list = []
+            for batch in eval_dataloader:
+                batch = tuple(t.to(device) for t in batch)
+                eval_input_ids, eval_input_mask, eval_added_input_mask, eval_img_feats, \
+                eval_hashtag_input_ids, eval_hashtag_input_mask, eval_label_ids = batch
+                imgs_f, img_mean, eval_img_att = encoder(eval_img_feats)
+                with torch.no_grad():
+                    tmp_eval_loss = model(eval_input_ids, eval_img_att, eval_input_mask, eval_added_input_mask,
+                                            eval_hashtag_input_ids,
+                                            eval_hashtag_input_mask, eval_label_ids)
+                    logits = model(eval_input_ids, eval_img_att, eval_input_mask, eval_added_input_mask,
+                                    eval_hashtag_input_ids,
+                                    eval_hashtag_input_mask)
+                logits = logits.detach().cpu().numpy()
+                label_ids = eval_label_ids.to('cpu').numpy()
+                true_label_list.append(label_ids)
+                pred_label_list.append(logits)
+                tmp_eval_accuracy = accuracy(logits, label_ids)
+
+                eval_loss += tmp_eval_loss.mean().item()
+                eval_accuracy += tmp_eval_accuracy
+
+                nb_eval_examples += eval_input_ids.size(0)
+                nb_eval_steps += 1
+
+            eval_loss = eval_loss / nb_eval_steps
+            eval_accuracy = eval_accuracy / nb_eval_examples
+            train_loss = tr_loss / nb_tr_steps 
+
+            true_label = np.concatenate(true_label_list)
+            pred_outputs = np.concatenate(pred_label_list)
+            precision, recall, F_score = macro_f1(true_label, pred_outputs)
+            result = {'eval_loss': eval_loss,
+                        'eval_accuracy': eval_accuracy,
+                        'precision': precision,
+                        'recall': recall,
+                        'f_score': F_score,
+                        'train_loss': train_loss}
+            logger.info("***** Dev Eval results *****")
+            for key in sorted(result.keys()):
+                logger.info("  %s = %s", key, str(result[key]))
+
+            if eval_accuracy > max_acc:
+                torch.save(model.state_dict(), output_model_file)
+                torch.save(encoder.state_dict(), output_encoder_file)
+                logger.info("better model")
+                max_acc = eval_accuracy
+
+    if do_test:
+        model.load_state_dict(torch.load(output_model_file))
+        encoder.load_state_dict(torch.load(output_encoder_file))
+        model.to(device)
+        encoder.to(device)
+        model.eval()
+        encoder.eval()
+
+        test_examples = processor.get_test_examples()
+        logger.info("***** Running evaluation on Test Set*****")
+        logger.info("  Num examples = %d", len(test_examples))
+        logger.info("  Batch size = %d", eval_batch_size)
+        test_features = processor.convert_mm_examples_to_features(test_examples, label_list, tokenizer)
+
+        test_input_ids, test_input_mask, test_added_input_mask, test_img_feats, \
+        test_hashtag_input_ids, test_hashtag_input_mask, test_label_ids = test_features
+        test_data = TensorDataset(test_input_ids, test_input_mask, test_added_input_mask, test_img_feats, \
+                                  test_hashtag_input_ids, test_hashtag_input_mask, test_label_ids)
+        test_dataloader = DataLoader(test_data, sampler=SequentialSampler(test_data), batch_size=eval_batch_size)
+
+        eval_loss, eval_accuracy = 0, 0
+        nb_eval_steps, nb_eval_examples = 0, 0
+        true_label_list = []
+        pred_label_list = []
+        for batch in test_dataloader:
+            batch = tuple(t.to(device) for t in batch)
+            test_input_ids, test_input_mask, test_added_input_mask, test_img_feats, \
+            test_hashtag_input_ids, test_hashtag_input_mask, test_label_ids = batch
+            imgs_f, img_mean, test_img_att = encoder(test_img_feats)
+            with torch.no_grad():
+                tmp_eval_loss = model(test_input_ids,test_img_att, test_input_mask, test_added_input_mask, \
+                                      test_hashtag_input_ids, test_hashtag_input_mask, test_label_ids)
+                logits = model(test_input_ids, test_img_att, test_input_mask, test_added_input_mask, \
+                               test_hashtag_input_ids, test_hashtag_input_mask)
+            logits = logits.detach().cpu().numpy()
+            label_ids = test_label_ids.to('cpu').numpy()
+            true_label_list.append(label_ids)
+            pred_label_list.append(logits)
+            tmp_eval_accuracy = accuracy(logits, label_ids)
+
+            eval_loss += tmp_eval_loss.mean().item()
+            eval_accuracy += tmp_eval_accuracy
+
+            nb_eval_examples += test_input_ids.size(0)
+            nb_eval_steps += 1
+        eval_loss = eval_loss / nb_eval_steps
+        eval_accuracy = eval_accuracy / nb_eval_examples
+        loss = train_loss if do_train else None
+
+        true_label = np.concatenate(true_label_list)
+        pred_outputs = np.concatenate(pred_label_list)
+
+        precision, recall, F_score = macro_f1(true_label, pred_outputs)
+        result = {'test_loss': eval_loss,
+                  'test_accuracy': eval_accuracy,
+                  'precision': precision,
+                  'recall': recall,
+                  'f_score': F_score,
+                  'train_loss': loss}
+
+        pred_label = np.argmax(pred_outputs, axis=-1)
+        fout_p = open(os.path.join(output_dir, "pred.txt"), 'w')
+        fout_t = open(os.path.join(output_dir, "true.txt"), 'w')
+        for i in range(len(pred_label)):
+            attstr = str(pred_label[i])
+            fout_p.write(attstr + '\n')
+        for i in range(len(true_label)):
+            attstr = str(true_label[i])
+            fout_t.write(attstr + '\n')
+
+        fout_p.close()
+        fout_t.close()
+
+        output_eval_file = os.path.join(output_dir, "eval_results.txt")
+        with open(output_eval_file, "w") as writer:
+            logger.info("***** Test Eval results *****")
+            for key in sorted(result.keys()):
+                logger.info("  %s = %s", key, str(result[key]))
+                writer.write("%s = %s\n" % (key, str(result[key])))
+
+if __name__ == "__main__":
+    main()
