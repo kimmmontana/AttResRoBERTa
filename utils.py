@@ -45,10 +45,10 @@ class Processer():
         self.data_dir = data_dir
 
     def get_train_examples(self):
-        return self._create_examples(os.path.join(self.data_dir, "train_example.txt"))
+        return self._create_examples(os.path.join(self.data_dir, "train.txt"))
 
     def get_eval_examples(self):
-        return self._create_examples(os.path.join(self.data_dir, "valid_example.txt"))
+        return self._create_examples(os.path.join(self.data_dir, "valid.txt"))
 
     def get_test_examples(self):
         return self._create_examples(os.path.join(self.data_dir, "test.txt"))
