@@ -1,7 +1,7 @@
 import logging
 import os
 import random
-
+import argparse
 import numpy as np
 import torch
 import torchvision
@@ -21,18 +21,6 @@ logging.basicConfig(format='%(asctime)s - %(levelname)s - %(name)s -   %(message
                     level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-output_dir = "./output"
-data_dir = "./data"
-image_dir = "./images"
-seed = 42
-num_train_epochs = 8
-train_batch_size = 32
-eval_batch_size = 16
-learning_rate = 5e-5
-warmup_proportion = 0.1
-do_train = True
-do_test = True
-
 def accuracy(out, labels):
     outputs = np.argmax(out, axis=1)
     return np.sum(outputs == labels)
@@ -47,6 +35,64 @@ def macro_f1(y_true, y_pred):
 
 
 def main():
+    parser = argparse.ArgumentParser()
+
+    parser.add_argument("--data_dir",
+                        default='../data',
+                        type=str)
+    parser.add_argument("--image_dir",
+                        default='../image',
+                        type=str)
+    parser.add_argument("--output_dir",
+                        default=None,
+                        type=str,
+                        required=True,
+                        help="The output directory where the model predictions and checkpoints will be written.")
+    parser.add_argument('--seed',
+                        type=int,
+                        default=42,
+                        help="random seed for initialization")
+    parser.add_argument("--num_train_epochs",
+                        default=8.0,
+                        type=float,
+                        help="Total number of training epochs to perform.")
+    parser.add_argument("--train_batch_size",
+                        default=32,
+                        type=int,
+                        help="Total batch size for training.")
+    parser.add_argument("--eval_batch_size",
+                        default=16,
+                        type=int,
+                        help="Total batch size for eval.")
+    parser.add_argument("--learning_rate",
+                        default=5e-5,
+                        type=float,
+                        help="The initial learning rate for Adam.")
+    parser.add_argument("--do_train",
+                        action='store_true',
+                        help="Whether to run training.")
+    parser.add_argument("--do_test",
+                        action='store_true',
+                        help="Whether to run on the test set.")
+    parser.add_argument("--warmup_proportion",
+                        default=0.1,
+                        type=float,
+                        help="Proportion of training to perform linear learning rate warmup for. "
+                             "E.g., 0.1 = 10%% of training.")
+    args = parser.parse_args()
+    
+    output_dir = args.output_dir
+    data_dir = args.data_dir
+    image_dir = args.image_dir
+    seed = args.seed
+    num_train_epochs = args.num_train_epochs
+    train_batch_size = args.train_batch_size
+    eval_batch_size = args.eval_batch_size
+    learning_rate = args.learning_rate
+    warmup_proportion = args.warmup_proportion
+    do_train = args.do_train
+    do_test = args.do_test
+
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     n_gpu = torch.cuda.device_count()
     logger.info("device: {} n_gpu: {}".format(device, n_gpu))
