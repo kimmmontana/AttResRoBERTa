@@ -1,5 +1,3 @@
-
-
 import copy
 import math
 
@@ -54,7 +52,6 @@ class BertIntermediate(nn.Module):
         hidden_states = self.dense(hidden_states)
         hidden_states = gelu(hidden_states)
         return hidden_states
-
 
 class BertCoAttention(nn.Module):
     def __init__(self):
@@ -171,7 +168,6 @@ class BertCrossAttentionLayer(nn.Module):
         # b*75*3072
         return layer_output
 
-
 class BertCrossEncoder(nn.Module):
     def __init__(self):
         super(BertCrossEncoder, self).__init__()
@@ -192,7 +188,6 @@ class MsdBERT(nn.Module):
     def __init__(self):
         super(MsdBERT, self).__init__()
         self.bert = BertModel.from_pretrained('bert-base-uncased')
-        self.hashtag_bert = BertModel.from_pretrained('bert-base-uncased')
         self.tanh = nn.Tanh()
         self.text2image_attention = BertCrossEncoder()
         self.image_text_pooler = BertPooler()
