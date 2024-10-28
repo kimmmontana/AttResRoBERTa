@@ -8,8 +8,7 @@ import torchvision
 from sklearn.metrics import precision_recall_fscore_support
 from torch.utils.data import TensorDataset, DataLoader, RandomSampler, SequentialSampler
 from tqdm import tqdm, trange
-from transformers import BertTokenizer
-
+from transformers import XLMRobertaTokenizer
 from models import Res_BERT, MsdBERT, BertOnly, ResNetOnly
 from optimizer import BertAdam
 from resnet_utils import myResnet
@@ -124,7 +123,7 @@ def main():
     processor = Processer(data_dir, image_dir, max_seq_length, 12)
 
     label_list = processor.get_labels()
-    tokenizer = BertTokenizer.from_pretrained("bert-base-uncased", do_lower_case=True)
+    tokenizer = XLMRobertaTokenizer.from_pretrained("xlm-roberta-base", do_lower_case=True)
 
     train_examples = processor.get_train_examples()
     eval_examples = processor.get_eval_examples()
