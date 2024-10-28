@@ -79,6 +79,12 @@ def main():
                         type=float,
                         help="Proportion of training to perform linear learning rate warmup for. "
                              "E.g., 0.1 = 10%% of training.")
+    parser.add_argument("--max_seq_length",
+                        default=77,
+                        type=int,
+                        help="The maximum total input sequence length after WordPiece tokenization. \n"
+                             "Sequences longer than this will be truncated, and sequences shorter \n"
+                             "than this will be padded.")
     parser.add_argument("--model_select",
                         default="MsdBERT",
                         type=str,
@@ -97,6 +103,7 @@ def main():
     do_train = args.do_train
     do_test = args.do_test
     model_select = args.model_select
+    max_seq_length = args.max_seq_length
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     n_gpu = torch.cuda.device_count()
@@ -114,7 +121,7 @@ def main():
         raise ValueError("Output directory ({}) already exists and is not empty.".format(output_dir))
 
     os.makedirs(output_dir, exist_ok=True)
-    processor = Processer(data_dir, image_dir, 77, 12)
+    processor = Processer(data_dir, image_dir, max_seq_length, 12)
 
     label_list = processor.get_labels()
     tokenizer = BertTokenizer.from_pretrained("bert-base-uncased", do_lower_case=True)
