@@ -281,7 +281,8 @@ class BertOnly(nn.Module):
 
     def forward(self, input_ids, visual_embeds_att, input_mask, added_attention_mask, hashtag_input_ids,
                 hashtag_input_mask, labels=None):
-        sequence_output, pooled_output = self.bert(input_ids=input_ids, token_type_ids=None, attention_mask=input_mask)
+        bert_model = self.bert(input_ids=input_ids, token_type_ids=None, attention_mask=input_mask)
+        sequence_output, pooled_output = bert_model[0], bert_model[1]
         pooled_output = self.dropout(pooled_output)
         logits = self.classifier(pooled_output)
         if labels is not None:
