@@ -10,7 +10,7 @@ from torch.utils.data import TensorDataset, DataLoader, RandomSampler, Sequentia
 from tqdm import tqdm, trange
 from transformers import BertTokenizer
 
-from models import Res_BERT
+from models import Res_BERT, MsdBERT
 from optimizer import BertAdam
 from resnet_utils import myResnet
 from utils import Processer
@@ -79,6 +79,10 @@ def main():
                         type=float,
                         help="Proportion of training to perform linear learning rate warmup for. "
                              "E.g., 0.1 = 10%% of training.")
+    parser.add_argument("--model_select",
+                        default="MsdBERT",
+                        type=str,
+                        help="MsdBERT or ResBERT")
     args = parser.parse_args()
     
     output_dir = args.output_dir
@@ -92,6 +96,7 @@ def main():
     warmup_proportion = args.warmup_proportion
     do_train = args.do_train
     do_test = args.do_test
+    model_select = args.model_select
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     n_gpu = torch.cuda.device_count()
@@ -118,7 +123,7 @@ def main():
     eval_examples = processor.get_eval_examples()
     num_train_steps = int((len(train_examples) * num_train_epochs) / train_batch_size)
 
-    model = Res_BERT()
+    model = MsdBERT() if model_select == "MsdBERT" else Res_BERT()
 
     model.to(device)
     net = torchvision.models.resnet152(pretrained=True)
