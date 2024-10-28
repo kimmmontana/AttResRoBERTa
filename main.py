@@ -10,7 +10,7 @@ from torch.utils.data import TensorDataset, DataLoader, RandomSampler, Sequentia
 from tqdm import tqdm, trange
 from transformers import BertTokenizer
 
-from models import Res_BERT, MsdBERT
+from models import Res_BERT, MsdBERT, BertOnly, ResNetOnly
 from optimizer import BertAdam
 from resnet_utils import myResnet
 from utils import Processer
@@ -130,7 +130,16 @@ def main():
     eval_examples = processor.get_eval_examples()
     num_train_steps = int((len(train_examples) * num_train_epochs) / train_batch_size)
 
-    model = MsdBERT() if model_select == "MsdBERT" else Res_BERT()
+    if model_select == 'BertOnly':
+        model = BertOnly()
+    elif model_select == 'ResNetOnly':
+        model = ResNetOnly()
+    elif model_select == 'Res_BERT':
+        model = Res_BERT()
+    elif model_select == 'MsdBERT':
+        model = MsdBERT() 
+    else:
+        raise ValueError("A model must be given.")
 
     model.to(device)
     net = torchvision.models.resnet152(pretrained=True)

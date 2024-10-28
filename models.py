@@ -271,3 +271,42 @@ class Res_BERT(nn.Module):
             return loss
         else:
             return logits
+
+class BertOnly(nn.Module):
+    def __init__(self):
+        super(BertOnly, self).__init__()
+        self.bert = BertModel.from_pretrained('bert-base-uncased')
+        self.dropout = nn.Dropout(0.1)
+        self.classifier = nn.Linear(768, 2)
+
+    def forward(self, input_ids, visual_embeds_att, input_mask, added_attention_mask, hashtag_input_ids,
+                hashtag_input_mask, labels=None):
+        sequence_output, pooled_output = self.bert(input_ids=input_ids, token_type_ids=None, attention_mask=input_mask)
+        pooled_output = self.dropout(pooled_output)
+        logits = self.classifier(pooled_output)
+        if labels is not None:
+            loss_fct = CrossEntropyLoss()
+            loss = loss_fct(logits.view(-1, 2), labels.view(-1))
+            return loss
+        else:
+            return logits
+        
+class ResNetOnly(nn.Module):
+    def __init__(self):
+        super(ResNetOnly, self).__init__()
+        self.vismap2text = nn.Linear(2048, 768)
+        self.classifier = nn.Linear(768, 2)
+
+    def forward(self, input_ids, visual_embeds_att, input_mask, added_attention_mask, hashtag_input_ids,
+                hashtag_input_mask, labels=None):
+        vis_embed_map = visual_embeds_att.view(-1, 2048, 49).permute(0, 2, 1)
+        # b*49*2048
+        vis_embed_map = self.vismap2text(vis_embed_map)
+        vis_embed_map = vis_embed_map.mean(1)
+        logits = self.classifier(vis_embed_map)
+        if labels is not None:
+            loss_fct = CrossEntropyLoss()
+            loss = loss_fct(logits.view(-1, 2), labels.view(-1))
+            return loss
+        else:
+            return logits
