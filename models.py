@@ -193,7 +193,7 @@ class MsdBERT(nn.Module):
         self.image_text_pooler = BertPooler()
         self.dropout = nn.Dropout(0.1)
         self.vismap2text = nn.Linear(2048, 768)
-        self.classifier = nn.Linear(768 * 2, 2)
+        self.classifier = nn.Linear(768, 2)
         self.W_b = nn.Parameter(nn.init.xavier_uniform_(torch.FloatTensor(768, 768)))
 
     def forward(self, input_ids, visual_embeds_att, input_mask, added_attention_mask, hashtag_input_ids,
@@ -231,7 +231,6 @@ class MsdBERT(nn.Module):
         # # b*1*768
         # hashtag_text_cross_attn = torch.matmul(attn.unsqueeze(1), hashtag_output)
         # # b*1*768
-
 
 
         image_text_pooled_output = self.image_text_pooler(image_text_cross_attn)
