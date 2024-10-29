@@ -356,3 +356,4 @@ def main():
                 writer.write("%s = %s\n" % (key, str(result[key])))
 
 if __name__ == "__main__":
+    main()
