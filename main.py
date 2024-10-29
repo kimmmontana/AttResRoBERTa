@@ -8,7 +8,7 @@ import torchvision
 from sklearn.metrics import precision_recall_fscore_support
 from torch.utils.data import TensorDataset, DataLoader, RandomSampler, SequentialSampler
 from tqdm import tqdm, trange
-from transformers import BertTokenizer
+from transformers import XLMRobertaTokenizer
 
 from models import Res_BERT, MsdBERT, BertOnly, ResNetOnly, MsdBERT_withHash
 from optimizer import BertAdam
