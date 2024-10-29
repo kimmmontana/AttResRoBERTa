@@ -89,10 +89,6 @@ def main():
                         default="MsdBERT",
                         type=str,
                         help="MsdBERT or ResBERT")
-    parser.add_argument('--seed',
-                        type=int,
-                        default=42,
-                        help="random seed for initialization")
     args = parser.parse_args()
     
     output_dir = args.output_dir
@@ -108,7 +104,6 @@ def main():
     do_test = args.do_test
     model_select = args.model_select
     max_seq_length = args.max_seq_length
-    seed = args.seed
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     n_gpu = torch.cuda.device_count()
