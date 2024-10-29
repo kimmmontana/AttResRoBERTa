@@ -235,8 +235,8 @@ class MsdBERT(nn.Module):
 class MsdBERT_withHash(nn.Module):
     def __init__(self):
         super(MsdBERT, self).__init__()
-        self.bert = BertModel.from_pretrained('bert-base-uncased')
-        self.hashtag_bert = BertModel.from_pretrained('bert-base-uncased')
+        self.bert = XLMRobertaModel.from_pretrained('xlm-roberta-base')
+        self.hashtag_bert = XLMRobertaModel.from_pretrained('xlm-roberta-base')
         self.tanh = nn.Tanh()
         self.text2image_attention = BertCrossEncoder()
         self.image_text_pooler = BertPooler()
