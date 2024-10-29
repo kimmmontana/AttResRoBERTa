@@ -222,17 +222,6 @@ class MsdBERT(nn.Module):
         # b*75*768
         image_text_cross_attn = self.text2image_attention(sequence_output, visual, extended_img_mask)
 
-
-        # # b*75*12
-        # C = self.tanh(torch.matmul(torch.matmul(sequence_output, self.W_b), hashtag_output.transpose(1,2)))
-        # # C: b*12
-        # C, _ = torch.max(C, dim=1)
-        # attn = F.softmax(C, dim=-1)
-        # # b*1*768
-        # hashtag_text_cross_attn = torch.matmul(attn.unsqueeze(1), hashtag_output)
-        # # b*1*768
-
-
         image_text_pooled_output = self.image_text_pooler(image_text_cross_attn)
         pooled_output = self.dropout(image_text_pooled_output)
         logits = self.classifier(pooled_output)
@@ -242,7 +231,70 @@ class MsdBERT(nn.Module):
             return loss
         else:
             return logits
+
+class MsdBERT_withHash(nn.Module):
+    def __init__(self):
+        super(MsdBERT, self).__init__()
+        self.bert = BertModel.from_pretrained('bert-base-uncased')
+        self.hashtag_bert = BertModel.from_pretrained('bert-base-uncased')
+        self.tanh = nn.Tanh()
+        self.text2image_attention = BertCrossEncoder()
+        self.image_text_pooler = BertPooler()
+        self.dropout = nn.Dropout(0.1)
+        self.vismap2text = nn.Linear(2048, 768)
+        self.classifier = nn.Linear(768 * 2, 2)
+        self.W_b = nn.Parameter(nn.init.xavier_uniform_(torch.FloatTensor(768, 768)))
+
+    def forward(self, input_ids, visual_embeds_att, input_mask, added_attention_mask, hashtag_input_ids,
+                hashtag_input_mask, labels=None):
+        """
+        This sequence_output gives str!
+        """
+        # sequence_output, pooled_output = self.bert(input_ids=input_ids, token_type_ids=None, attention_mask=input_mask)
+        bert1_output = self.bert(input_ids=input_ids, token_type_ids=None, attention_mask=input_mask)
+        sequence_output = bert1_output[0]
+        pooled_output = bert1_output[1]
+
+        # hashtag_output, hashtag_pooled_output = self.hashtag_bert(input_ids=hashtag_input_ids, token_type_ids=None,attention_mask=hashtag_input_mask)
+        hashtag_bert_output = self.hashtag_bert(input_ids=hashtag_input_ids, token_type_ids=None,
+                                                                  attention_mask=hashtag_input_mask)
+        hashtag_output = hashtag_bert_output[0]
+        hashtag_pooled_output = hashtag_bert_output[1] 
         
+        # added_attention_mask batch_size*124
+        # img_mask # b*49
+        img_mask = added_attention_mask[:, :49]
+        # img_mask # b*1*1*49
+        extended_img_mask = img_mask.unsqueeze(1).unsqueeze(2)
+        extended_img_mask = extended_img_mask.to(dtype=next(self.parameters()).dtype)  # fp16 compatibility
+        extended_img_mask = (1.0 - extended_img_mask) * -10000.0
+        # text作为query， image作为key和value
+
+        # batchsize*49*2048
+        vis_embed_map = visual_embeds_att.view(-1, 2048, 49).permute(0, 2, 1)
+        # b*49*768
+        visual = self.vismap2text(vis_embed_map)
+        # b*75*768
+        image_text_cross_attn = self.text2image_attention(sequence_output, visual, extended_img_mask)
+        # b*75*12
+        C = self.tanh(torch.matmul(torch.matmul(sequence_output, self.W_b), hashtag_output.transpose(1,2)))
+        # C: b*12
+        C, _ = torch.max(C, dim=1)
+        attn = F.softmax(C, dim=-1)
+        # b*1*768
+        hashtag_text_cross_attn = torch.matmul(attn.unsqueeze(1), hashtag_output)
+        # b*1*768
+        image_text_pooled_output = self.image_text_pooler(image_text_cross_attn)
+        pooled_output = torch.cat([image_text_pooled_output, hashtag_text_cross_attn.squeeze(1)], dim=-1)
+        pooled_output = self.dropout(pooled_output)
+        logits = self.classifier(pooled_output)
+        if labels is not None:
+            loss_fct = CrossEntropyLoss()
+            loss = loss_fct(logits.view(-1, 2), labels.view(-1))
+            return loss
+        else:
+            return logits
+
 class Res_BERT(nn.Module):
     def __init__(self):
         super(Res_BERT, self).__init__()

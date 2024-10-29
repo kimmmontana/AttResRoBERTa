@@ -8,8 +8,9 @@ import torchvision
 from sklearn.metrics import precision_recall_fscore_support
 from torch.utils.data import TensorDataset, DataLoader, RandomSampler, SequentialSampler
 from tqdm import tqdm, trange
-from transformers import XLMRobertaTokenizer
-from models import Res_BERT, MsdBERT, BertOnly, ResNetOnly
+from transformers import BertTokenizer
+
+from models import Res_BERT, MsdBERT, BertOnly, ResNetOnly, MsdBERT_withHash
 from optimizer import BertAdam
 from resnet_utils import myResnet
 from utils import Processer
@@ -142,6 +143,8 @@ def main():
         model = Res_BERT()
     elif model_select == 'MsdBERT':
         model = MsdBERT() 
+    elif model_select == 'MsdBERT_withHash':
+        model = MsdBERT_withHash() 
     else:
         raise ValueError("A model must be given.")
 
@@ -353,4 +356,3 @@ def main():
                 writer.write("%s = %s\n" % (key, str(result[key])))
 
 if __name__ == "__main__":
-    main()
