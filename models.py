@@ -234,7 +234,7 @@ class MsdBERT(nn.Module):
 
 class MsdBERT_withHash(nn.Module):
     def __init__(self):
-        super(MsdBERT, self).__init__()
+        super(MsdBERT_withHash, self).__init__()
         self.bert = XLMRobertaModel.from_pretrained('xlm-roberta-base')
         self.hashtag_bert = XLMRobertaModel.from_pretrained('xlm-roberta-base')
         self.tanh = nn.Tanh()
