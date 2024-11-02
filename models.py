@@ -328,7 +328,7 @@ class BertOnly(nn.Module):
     def __init__(self):
         super(BertOnly, self).__init__()
         self.bert = XLMRobertaModel.from_pretrained('xlm-roberta-base')
-        self.dropout = nn.Dropout(1)
+        self.dropout = nn.Dropout(0.1)
         self.classifier = nn.Linear(768, 2)
 
     def forward(self, input_ids, visual_embeds_att, input_mask, added_attention_mask, hashtag_input_ids,
