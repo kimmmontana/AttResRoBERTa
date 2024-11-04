@@ -9554,7 +9554,7 @@
 ["875441048030381", "Feeling cute today, ako lang to", "0"]
 ["821391662738879", "Napakakaunti ng manonood ng basketball game tonight", "0"]
 ["890566794553464", "There_s a lot of tourist here na gusto masubukan sumakay sa bangka", "0"]
-["123824999341879", ""Wow, ang linaw ng picture! Perfect for my feed. HD quality", "1"]
+["123824999341879", "Wow, ang linaw ng picture! Perfect for my feed. HD quality", "1"]
 ["121163392596389", "Siya ay si Michael Pettaway Tomlin, an American professional football coach who is the head coach of the Pittsburgh Steelers in the National Football League.", "0"]
 ["426749964924512", "Puwedeng pang-koleksyon ang mga to, might avail one soon", "0"]
 ["454989161720668", "Ballet or basketball? Hindi ko rin sigurado, basta pangalawa ako!", "1"]
