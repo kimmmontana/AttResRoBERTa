@@ -87,6 +87,7 @@ class Processer():
                     continue
                 img_id = lineLS[0]
                 text = lineLS[1]
+                print(text)
                 label = int(lineLS[-1])
                 examples.append(InputExample(text=text, img_id=img_id, label=label))
         return examples
