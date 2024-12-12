@@ -2572,7 +2572,7 @@
 ["819327757209321472", "2 different filters", "0"]
 ["818603171480215552", "oops! i think i dont need a challenge", "0"]
 ["819330120791900160", "may red carpet, may cake", "0"]
-["823309471464259589", "this was an experience and a half to make ! wouldn 't have even known where to start if it wasnt for <user> , thank you so much \ ( ^ o ^ ) /", "0"]
+["823309471464259589", "this was an experience and a half to make ! wouldn 't have even known where to start if it wasnt for <user> , thank you so much  ( ^ o ^ ) /", "0"]
 ["819330072226201600", "new screenshot from zelda: breath of the wild. ano kaya ang pinupuntahan ni link?", "0"]
 ["823318287652098054", "mga bata", "0"]
 ["820050499185479680", "isang physical outfielder mula sa roseville, ca, sa kanyang unang season kasama ang pack, introducing jimmy lunardelli!", "0"]
