@@ -545,9 +545,7 @@
 ["862451438739259392", "no totally . seems legit . calling now . are there steak knives ?", "1"]
 ["921038238458015744", "sobrang sakit siguro <user> not to be able to serve his country that he loves so much ...", "1"]
 ["842026156870234112", "sun and moon ay sobrang ganda", "1"]
-["940346962234130432", "if you enjoy buying a firearm component from <user> & then receive an email from them telling you they 've lowered the price $ 40.00 days later , then you 'll love doing business with them-
-
-magugustuhan mo rin ang walang katapusang oras ng paghihintay sa kanilang libreng telepono.", "1"]
+["940346962234130432", "if you enjoy buying a firearm component from <user> & then receive an email from them telling you they 've lowered the price $ 40.00 days later , then you 'll love doing business with them-magugustuhan mo rin ang walang katapusang oras ng paghihintay sa kanilang libreng telepono.", "1"]
 ["817367533284102144", "snow . yay . so excited . woo .", "1"]
 ["719260487536418816", "our rusting nuclear arsenal . Disarmament dahil sa pagbabaya.", "1"]
 ["696792776118112256", "real feel of almost 90  in pasadena in february . thanks climate change !", "1"]
@@ -1159,9 +1157,7 @@ magugustuhan mo rin ang walang katapusang oras ng paghihintay sa kanilang libren
 ["817520375806443523", "scientists predict there may be more plastic in the ocean than fish by 2050 if we don 't change reduce # plastics for 2017 & tulungan ang dagat !", "0"]
 ["822950639181303808", "seattle women 's march my city", "0"]
 ["819689696846643200", "anong paborito mong color baby boomer ? ah bcpsblue ! <user>", "0"]
-["822952230978514944", "was a lot of fun watching these ladies take down the school record in the 4x4 today ! 
-
-abangan ang mas malalaking bagay na darating !", "0"]
+["822952230978514944", "was a lot of fun watching these ladies take down the school record in the 4x4 today ! abangan ang mas malalaking bagay na darating !", "0"]
 ["820054455714508805", "<user> # selfiefornash is trending # 1 worldwide !", "0"]
 ["821506087224569860", "ginawa ko ung meet the artist thing as a cool down after paintin all day at work ! !", "0"]
 ["819328921900642305", "ang pinaka bizarre  gotta hear both sides  ever .", "1"]
@@ -2949,9 +2945,7 @@ abangan ang mas malalaking bagay na darating !", "0"]
 ["797808849893883904", "oras sa nature ..", "1"]
 ["883780562615390208", " kailangan mo ng great self control  <user> <user>", "1"]
 ["848618503460540417", "# travel is glamorous . is a beautiful thing .", "1"]
-["687155161697894400", "<user> 
-
-ang ganda nito para sa rain/sleep radio ko.", "1"]
+["687155161697894400", "<user>  ang ganda nito para sa rain/sleep radio ko.", "1"]
 ["904405713337942017", "awesome , thanks <user> !", "1"]
 ["707961578281246720", "donald powers ....", "1"]
 ["717431682953912320", "alala ko ang mga days na yon", "1"]
