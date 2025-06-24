@@ -38,7 +38,7 @@ These results led to the **rejection of the null hypothesis** at the 0.05 signif
 
 ## 📁 Dataset
 
-- **Total Samples**: 2,759 text-image pairs
+- **Total Samples**: 27 000 (80% Training, 10% Testing, 10% Validation)
 - **Languages**: Code-switched Tagalog-English
 - **Labels**: Sarcastic / Not Sarcastic
 - **Sources**: Public meme pages and online communities
