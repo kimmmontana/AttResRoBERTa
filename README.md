@@ -34,6 +34,9 @@ Att-ResRoBERTa is a multimodal deep learning model developed for sarcasm detecti
 - **Test Statistic**: 6.39
 - **p-value**: 0.01145408
 
+![image](https://github.com/user-attachments/assets/cbe763bc-b8e6-465a-9cbb-14460d37591e)
+
+
 These results led to the **rejection of the null hypothesis** at the 0.05 significance level, suggesting that Att-ResRoBERTa performs significantly better than the baseline BERT-based model in the given context.
 
 ## 📁 Dataset
